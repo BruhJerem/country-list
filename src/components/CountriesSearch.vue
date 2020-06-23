@@ -49,6 +49,11 @@
             </v-list>
           </v-expand-transition>
           <v-card-actions>
+            <v-radio-group v-model="selectedCategory" row>
+              <v-radio model="selectedCategory" label="Name" value="name"></v-radio>
+              <v-radio model="selectedCategory" label="Capital" value="capital"></v-radio>
+              <v-radio model="selectedCategory" label="Region" value="region"></v-radio>
+            </v-radio-group>
             <v-spacer></v-spacer>
             <v-btn
               :disabled="!model"
@@ -74,9 +79,12 @@
             </v-col>
             <v-col
               v-else
-              v-for="country in countries"
+              v-for="country in filteredCountry"
               :key="country.name"
               cols="6"
+              v-bind:pagination.sync="pagination"
+              v-bind:items="countries"
+              v-bind:search="search"
             >
               <v-card>
                 <v-img
@@ -87,8 +95,8 @@
                 >
                   <v-card-title v-text="country.name"></v-card-title>
                 </v-img>
-                <v-card-subtitle class="pb-0">{{country.capital}}</v-card-subtitle>
-                <v-card-subtitle class="pb-0">{{country.region}}</v-card-subtitle>
+                <v-card-subtitle class="pb-0">Capital: {{country.capital}}</v-card-subtitle>
+                <v-card-subtitle class="pb-0">Region: {{country.region}}</v-card-subtitle>
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
@@ -110,10 +118,8 @@
     <v-row class="text-center">
       <v-container class="max-width">
         <v-pagination
-          class="my-4"
           v-model="pagination.page"
-          :length="countries%20"
-          @input="next"
+          :length="pages"
         ></v-pagination>
       </v-container>
     </v-row>
@@ -189,24 +195,24 @@
     name: 'CountriesSearch',
 
     data: () => ({
-    descriptionLimit: 60,
-    dialog: false,
-    entries: [],
-    isLoading: false,
-    model: null,
-    search: null,
-    countries: [],
-    country_select: {},
-    all_countries: [],
-    pagination: {
-      page: 1,
-      total: 0,
-      perPage: 20,
-      visible: 7
-    },
-    index_min: 0,
-    index_max: 20,
-  }),
+      selectedCategory: 'all',
+      descriptionLimit: 60,
+      dialog: false,
+      entries: [],
+      isLoading: false,
+      model: null,
+      search: null,
+      countries: [],
+      country_select: {},
+      all_countries: [],
+      pagination: {
+        page: 1,
+        total: 0,
+        perPage: 20,
+        visible: 7
+      },
+    }
+  ),
   methods:{
     changeDialog(val) {
       for (let index = 0; index < this.countries.length; index++) {
@@ -254,6 +260,38 @@
           return Object.assign({}, entry, { Description })
         })
       },
+      pages () {
+        return this.pagination.rowsPerPage ? Math.ceil(this.countries.length / this.pagination.rowsPerPage) : 0
+      },
+      filteredCountry: function() {
+        var vm = this;
+        var category = vm.selectedCategory;
+        
+        if(category == "all") {
+          return this.countries;
+        } else {
+          if (category == 'name'){
+            return vm.sort(function(a, b) {
+              if(a.name < b.name) { return -1; }
+              if(a.name > b.name) { return 1; }
+              return 0;
+            });
+          } else if (category == 'capital') {
+            return vm.countries.sort(function(a, b) {
+              if(a.capital < b.capital) { return -1; }
+              if(a.capital > b.capital) { return 1; }
+              return 0;
+            });
+          } else if (category == 'region'){
+            return vm.countries.sort(function(a, b) {
+              if(a.region < b.region) { return -1; }
+              if(a.region > b.region) { return 1; }
+              return 0;
+            });
+          }
+          return vm.countries
+        }
+      }
     },
 
     watch: {
